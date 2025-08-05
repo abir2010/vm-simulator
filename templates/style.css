@@ -1,0 +1,60 @@
+body {
+  font-family: "Segoe UI", sans-serif;
+  margin: 20px;
+  background: #f9f9fb;
+  text-align: center;
+}
+h2 {
+  color: #333;
+}
+#controls,
+#frames,
+#status,
+#graph {
+  margin-top: 20px;
+}
+.frame {
+  border: 2px solid #444;
+  padding: 20px;
+  width: 60px;
+  height: 60px;
+  text-align: center;
+  font-size: 24px;
+  background-color: #f0f0f0;
+  border-radius: 6px;
+}
+.fault {
+  background-color: #ff9d9d !important;
+}
+.hit {
+  background-color: #9aff9a !important;
+}
+#frames-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+#frames {
+  display: flex;
+  gap: 10px;
+}
+#graph {
+  width: 100%;
+  padding: 0 0 300px 0;
+}
+.btn {
+  padding: 8px 16px;
+  margin: 5px;
+  cursor: pointer;
+  border-radius: 5px;
+  border: none;
+  background-color: #6366f1;
+  color: white;
+}
+select,
+input {
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  margin: 5px;
+}

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Page Replacement Simulator</title>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        margin: 20px;
+        background: #f9f9fb;
+        text-align: center;
+      }
+      h2 {
+        color: #333;
+      }
+      #controls,
+      #frames,
+      #status,
+      #graph {
+        margin-top: 20px;
+      }
+      .frame {
+        border: 2px solid #444;
+        padding: 20px;
+        width: 60px;
+        height: 60px;
+        text-align: center;
+        font-size: 24px;
+        background-color: #f0f0f0;
+        border-radius: 6px;
+      }
+      .fault {
+        background-color: #ff9d9d !important;
+      }
+      .hit {
+        background-color: #9aff9a !important;
+      }
+      #frames-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 10px;
+      }
+      #frames {
+        display: flex;
+        gap: 10px;
+      }
+      #graph {
+        width: 100%;
+        padding: 0 0 300px 0;
+      }
+      .btn {
+        padding: 8px 16px;
+        margin: 5px;
+        cursor: pointer;
+        border-radius: 5px;
+        border: none;
+        background-color: #6366f1;
+        color: white;
+      }
+      select,
+      input {
+        padding: 8px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        margin: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Page Replacement Simulator</h2>
+
+    <div id="controls">
+      <label>Reference String:</label>
+      <input
+        id="refString"
+        type="text"
+        size="40"
+        value="0 2 1 0 3 2 4 0 2 1 3 4"
+      />
+      <label>Frames:</label>
+      <input id="frameCount" type="number" min="1" max="10" value="4" />
+      <label>Algorithm:</label>
+      <select id="algorithm">
+        <option value="FIFO">FIFO</option>
+        <option value="LRU">LRU</option>
+        <option value="OPT">Optimal</option>
+      </select>
+      <button class="btn" onclick="startSimulation()">Start</button>
+      <button class="btn" onclick="prevStep()">Previous</button>
+      <button class="btn" onclick="nextStep()">Next</button>
+    </div>
+
+    <div id="status"></div>
+    <div id="frames-container">
+      <div id="frames"></div>
+    </div>
+    <canvas id="graph"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      let steps = [];
+      let currentStep = 0;
+      let totalFaults = 0;
+
+      function startSimulation() {
+        currentStep = 0;
+        document.getElementById("frames").innerHTML = "";
+        document.getElementById("status").textContent = "Simulating...";
+
+        const refString = document.getElementById("refString").value;
+        const frames = document.getElementById("frameCount").value;
+        const algo = document.getElementById("algorithm").value;
+
+        fetch("/simulate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            reference_string: refString,
+            frames: frames,
+            algorithm: algo,
+          }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            steps = data.steps;
+            totalFaults = data.faults;
+            showStep();
+            updateGraph();
+          });
+      }
+
+      function showStep() {
+        if (currentStep < 0) currentStep = 0;
+        if (currentStep >= steps.length) currentStep = steps.length - 1;
+
+        const step = steps[currentStep];
+        const framesDiv = document.getElementById("frames");
+        framesDiv.innerHTML = "";
+
+        step.frames.forEach((page) => {
+          const div = document.createElement("div");
+          div.className = "frame";
+          div.textContent = page === null ? "" : page;
+          if (step.page_fault) {
+            div.classList.add("fault");
+          } else {
+            div.classList.add("hit");
+          }
+          framesDiv.appendChild(div);
+        });
+
+        document.getElementById("status").textContent = `Step ${
+          currentStep + 1
+        } / ${steps.length}: Accessing Page ${step.page} — ${
+          step.page_fault ? "Page Fault" : "Hit"
+        } | Total Faults: ${totalFaults}`;
+      }
+
+      function nextStep() {
+        if (currentStep < steps.length - 1) {
+          currentStep++;
+          showStep();
+        }
+      }
+
+      function prevStep() {
+        if (currentStep > 0) {
+          currentStep--;
+          showStep();
+        }
+      }
+
+      function updateGraph() {
+        const ctx = document.getElementById("graph").getContext("2d");
+        const labels = steps.map((s, i) => i + 1);
+        const faults = steps.map((s) => (s.page_fault ? 1 : 0));
+
+        new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "Page Faults",
+                data: faults,
+                backgroundColor: faults.map((f) => (f ? "#ef4444" : "#22c55e")),
+              },
+            ],
+          },
+          options: {
+            plugins: {
+              legend: { display: false },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  stepSize: 1,
+                  callback: (value) => (value === 1 ? "Fault" : "Hit"),
+                },
+              },
+            },
+          },
+        });
+      }
+    </script>
+  </body>
+</html>
